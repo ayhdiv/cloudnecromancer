@@ -426,15 +426,33 @@ Upload the CSV output as a Splunk lookup table, then correlate with CloudTrail l
 | join resource_id [search index=cloudtrail earliest=-30d]
 ```
 
-## Supported Services
+## Supported Services (23)
 
-| Service | Create | Update | Delete |
-|---------|--------|--------|--------|
-| EC2 (instances, VPCs, subnets, SGs, IGWs) | Yes | Yes | Yes |
-| IAM (roles, users, policies) | Yes | Yes | Yes |
-| S3 (buckets, policies, versioning) | Yes | Yes | Yes |
-| Lambda (functions) | Yes | Yes | Yes |
-| RDS (instances, clusters) | Yes | Yes | Yes |
+| Service | Resources | Create | Update | Delete |
+|---------|-----------|--------|--------|--------|
+| EC2 | instances, VPCs, subnets, security groups, IGWs | Yes | Yes | Yes |
+| IAM | roles, users, policies | Yes | Yes | Yes |
+| S3 | buckets, policies, versioning, public access | Yes | Yes | Yes |
+| Lambda | functions | Yes | Yes | Yes |
+| RDS | instances, clusters | Yes | Yes | Yes |
+| ELB | load balancers, target groups, listeners | Yes | Yes | Yes |
+| ECS | clusters, services, task definitions | Yes | Yes | Yes |
+| EKS | clusters, nodegroups | Yes | Yes | Yes |
+| KMS | keys, aliases, rotation | Yes | Yes | Yes |
+| Secrets Manager | secrets, rotation, restore | Yes | Yes | Yes |
+| CloudWatch Logs | log groups, log streams, retention | Yes | Yes | Yes |
+| DynamoDB | tables, global tables | Yes | Yes | Yes |
+| SNS | topics, subscriptions | Yes | Yes | Yes |
+| SQS | queues, queue attributes | Yes | Yes | Yes |
+| API Gateway | REST APIs, HTTP APIs, stages | Yes | Yes | Yes |
+| Route 53 | hosted zones, record sets | Yes | Yes | Yes |
+| ECR | repositories, lifecycle policies, scanning | Yes | Yes | Yes |
+| ElastiCache | clusters, replication groups | Yes | Yes | Yes |
+| WAF v2 | web ACLs, rule groups, IP sets | Yes | Yes | Yes |
+| GuardDuty | detectors, filters | Yes | Yes | Yes |
+| CloudFront | distributions, origin access controls | Yes | Yes | Yes |
+| EBS | volumes, snapshots | Yes | Yes | Yes |
+| SSM | documents, parameters, maintenance windows | Yes | Yes | Yes |
 
 ## How It Works
 

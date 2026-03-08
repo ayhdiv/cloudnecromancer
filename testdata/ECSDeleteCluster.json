@@ -1,0 +1,28 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-11T12:00:00Z",
+  "eventSource": "ecs.amazonaws.com",
+  "eventName": "DeleteCluster",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "cluster": "arn:aws:ecs:us-east-1:123456789012:cluster/production-cluster"
+  },
+  "responseElements": {
+    "cluster": {
+      "clusterArn": "arn:aws:ecs:us-east-1:123456789012:cluster/production-cluster",
+      "clusterName": "production-cluster",
+      "status": "INACTIVE"
+    }
+  },
+  "eventID": "evt-ecs-cluster-delete-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

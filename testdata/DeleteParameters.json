@@ -1,0 +1,25 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-05T15:00:00Z",
+  "eventSource": "ssm.amazonaws.com",
+  "eventName": "DeleteParameters",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "names": ["/app/config/old-param1", "/app/config/old-param2"]
+  },
+  "responseElements": {
+    "deletedParameters": ["/app/config/old-param1", "/app/config/old-param2"],
+    "invalidParameters": []
+  },
+  "eventID": "evt-ssm-delete-params-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

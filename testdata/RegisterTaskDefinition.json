@@ -1,0 +1,43 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-11T09:00:00Z",
+  "eventSource": "ecs.amazonaws.com",
+  "eventName": "RegisterTaskDefinition",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "family": "my-web-app",
+    "containerDefinitions": [
+      {
+        "name": "web",
+        "image": "nginx:latest",
+        "cpu": 256,
+        "memory": 512
+      }
+    ],
+    "cpu": "256",
+    "memory": "512",
+    "requiresCompatibilities": ["FARGATE"],
+    "networkMode": "awsvpc"
+  },
+  "responseElements": {
+    "taskDefinition": {
+      "taskDefinitionArn": "arn:aws:ecs:us-east-1:123456789012:task-definition/my-web-app:1",
+      "family": "my-web-app",
+      "revision": 1,
+      "cpu": "256",
+      "memory": "512",
+      "status": "ACTIVE"
+    }
+  },
+  "eventID": "evt-ecs-taskdef-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

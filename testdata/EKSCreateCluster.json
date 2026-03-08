@@ -1,0 +1,41 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-12T10:00:00Z",
+  "eventSource": "eks.amazonaws.com",
+  "eventName": "CreateCluster",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "name": "prod-k8s",
+    "version": "1.28",
+    "roleArn": "arn:aws:iam::123456789012:role/EKSClusterRole",
+    "resourcesVpcConfig": {
+      "subnetIds": ["subnet-0bb1c79de3EXAMPLE", "subnet-0cc2d80ef4EXAMPLE"],
+      "securityGroupIds": ["sg-0123456789abcdef0"]
+    }
+  },
+  "responseElements": {
+    "cluster": {
+      "name": "prod-k8s",
+      "arn": "arn:aws:eks:us-east-1:123456789012:cluster/prod-k8s",
+      "version": "1.28",
+      "roleArn": "arn:aws:iam::123456789012:role/EKSClusterRole",
+      "resourcesVpcConfig": {
+        "vpcId": "vpc-0123456789abcdef0",
+        "subnetIds": ["subnet-0bb1c79de3EXAMPLE", "subnet-0cc2d80ef4EXAMPLE"],
+        "securityGroupIds": ["sg-0123456789abcdef0"]
+      },
+      "status": "CREATING"
+    }
+  },
+  "eventID": "evt-eks-cluster-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

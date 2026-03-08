@@ -1,0 +1,40 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-10T09:15:30Z",
+  "eventSource": "elasticloadbalancing.amazonaws.com",
+  "eventName": "CreateLoadBalancer",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "name": "my-app-alb",
+    "subnets": ["subnet-0bb1c79de3EXAMPLE", "subnet-0cc2d80ef4EXAMPLE"],
+    "securityGroups": ["sg-0123456789abcdef0"],
+    "scheme": "internet-facing",
+    "type": "application"
+  },
+  "responseElements": {
+    "loadBalancers": [
+      {
+        "loadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/my-app-alb/50dc6c495c0c9188",
+        "loadBalancerName": "my-app-alb",
+        "dNSName": "my-app-alb-123456789.us-east-1.elb.amazonaws.com",
+        "scheme": "internet-facing",
+        "vpcId": "vpc-0123456789abcdef0",
+        "type": "application",
+        "state": {
+          "code": "provisioning"
+        }
+      }
+    ]
+  },
+  "eventID": "evt-elb-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

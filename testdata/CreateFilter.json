@@ -1,0 +1,33 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-02T10:30:00Z",
+  "eventSource": "guardduty.amazonaws.com",
+  "eventName": "CreateFilter",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "detectorId": "d4b040365221be2b54a6264dc1b6d587",
+    "name": "high-severity-findings",
+    "action": "ARCHIVE",
+    "findingCriteria": {
+      "criterion": {
+        "severity": {
+          "gte": 7
+        }
+      }
+    }
+  },
+  "responseElements": {
+    "name": "high-severity-findings"
+  },
+  "eventID": "evt-gd-create-filter-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

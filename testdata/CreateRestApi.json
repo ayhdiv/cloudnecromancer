@@ -1,0 +1,28 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T14:50:00Z",
+  "eventSource": "apigateway.amazonaws.com",
+  "eventName": "CreateRestApi",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.apigateway.amazonaws.com",
+  "requestParameters": {
+    "name": "my-rest-api",
+    "description": "My REST API for orders"
+  },
+  "responseElements": {
+    "id": "abc123def4",
+    "name": "my-rest-api",
+    "description": "My REST API for orders",
+    "createdDate": "2025-11-15T14:50:00Z"
+  },
+  "eventID": "evt-apigw-create-rest-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

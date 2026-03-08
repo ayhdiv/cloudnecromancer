@@ -1,0 +1,37 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-10T09:20:00Z",
+  "eventSource": "elasticloadbalancing.amazonaws.com",
+  "eventName": "CreateTargetGroup",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "name": "my-app-targets",
+    "protocol": "HTTP",
+    "port": "8080",
+    "vpcId": "vpc-0123456789abcdef0",
+    "targetType": "instance"
+  },
+  "responseElements": {
+    "targetGroups": [
+      {
+        "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/my-app-targets/73e2d6bc24d8a067",
+        "targetGroupName": "my-app-targets",
+        "protocol": "HTTP",
+        "port": "8080",
+        "vpcId": "vpc-0123456789abcdef0",
+        "targetType": "instance"
+      }
+    ]
+  },
+  "eventID": "evt-elb-tg-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

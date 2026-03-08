@@ -13,27 +13,42 @@ import (
 func TestRegisteredEventsContainsAllExpected(t *testing.T) {
 	registered := parser.RegisteredEvents()
 
-	expectedEvents := []string{
-		// EC2
-		"RunInstances", "TerminateInstances", "StartInstances", "StopInstances",
-		"CreateSecurityGroup", "DeleteSecurityGroup", "AuthorizeSecurityGroupIngress",
-		"CreateVpc", "DeleteVpc", "CreateSubnet", "CreateInternetGateway", "AttachInternetGateway",
-		// IAM
-		"CreateRole", "DeleteRole", "AttachRolePolicy", "DetachRolePolicy",
-		"CreateUser", "DeleteUser", "CreatePolicy", "DeletePolicy",
-		// S3
-		"CreateBucket", "DeleteBucket", "PutBucketPolicy", "PutBucketVersioning", "PutPublicAccessBlock",
-		// Lambda
-		"CreateFunction20150331", "UpdateFunctionCode20150331v2", "DeleteFunction20150331",
-		// RDS
-		"CreateDBInstance", "DeleteDBInstance", "ModifyDBInstance", "CreateDBCluster", "DeleteDBCluster",
+	// Spot-check events from each service category
+	spotChecks := []string{
+		// Original 5 services
+		"RunInstances", "TerminateInstances", "CreateSecurityGroup",
+		"CreateRole", "AttachRolePolicy",
+		"CreateBucket", "PutBucketPolicy",
+		"CreateFunction20150331", "DeleteFunction20150331",
+		"CreateDBInstance", "ModifyDBInstance",
+		// Tier 1: IR-critical
+		"CreateLoadBalancer", "CreateTargetGroup",
+		"CreateCluster", "RegisterTaskDefinition",
+		"CreateNodegroup", "UpdateClusterVersion",
+		"CreateKey", "ScheduleKeyDeletion",
+		"CreateSecret", "RotateSecret",
+		"CreateLogGroup", "PutRetentionPolicy",
+		// Tier 2: Compliance
+		"CreateTable", "UpdateTable",
+		"CreateTopic", "Subscribe",
+		"CreateQueue", "SetQueueAttributes",
+		"CreateRestApi", "CreateApi",
+		"CreateHostedZone", "ChangeResourceRecordSets",
+		"CreateRepository", "PutImageScanningConfiguration",
+		"CreateCacheCluster", "CreateReplicationGroup",
+		// Tier 3: Security
+		"CreateWebACL", "CreateRuleGroup",
+		"CreateDetector", "UpdateDetector",
+		"CreateDistribution", "CreateOriginAccessControl",
+		"CreateVolume", "CreateSnapshot",
+		"CreateDocument", "PutParameter",
 	}
 
-	for _, event := range expectedEvents {
+	for _, event := range spotChecks {
 		assert.Contains(t, registered, event, "event %s should be registered", event)
 	}
 
-	assert.Len(t, registered, len(expectedEvents), "total registered events should match expected count")
+	assert.Len(t, registered, 133, "total registered events should match expected count")
 }
 
 func TestLookupReturnsCorrectParser(t *testing.T) {

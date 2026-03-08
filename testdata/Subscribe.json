@@ -1,0 +1,26 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T14:40:00Z",
+  "eventSource": "sns.amazonaws.com",
+  "eventName": "Subscribe",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.sns.amazonaws.com",
+  "requestParameters": {
+    "topicArn": "arn:aws:sns:us-east-1:123456789012:order-notifications",
+    "protocol": "email",
+    "endpoint": "user@example.com"
+  },
+  "responseElements": {
+    "subscriptionArn": "arn:aws:sns:us-east-1:123456789012:order-notifications:a1b2c3d4-5678-90ab-cdef-EXAMPLE22222"
+  },
+  "eventID": "evt-sns-subscribe-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

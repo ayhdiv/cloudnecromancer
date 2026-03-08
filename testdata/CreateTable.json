@@ -1,0 +1,51 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T14:30:00Z",
+  "eventSource": "dynamodb.amazonaws.com",
+  "eventName": "CreateTable",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.dynamodb.amazonaws.com",
+  "requestParameters": {
+    "tableName": "users-table",
+    "keySchema": [
+      {
+        "attributeName": "userId",
+        "keyType": "HASH"
+      },
+      {
+        "attributeName": "sortKey",
+        "keyType": "RANGE"
+      }
+    ],
+    "attributeDefinitions": [
+      {
+        "attributeName": "userId",
+        "attributeType": "S"
+      },
+      {
+        "attributeName": "sortKey",
+        "attributeType": "S"
+      }
+    ],
+    "billingMode": "PAY_PER_REQUEST"
+  },
+  "responseElements": {
+    "tableDescription": {
+      "tableName": "users-table",
+      "tableStatus": "CREATING",
+      "tableArn": "arn:aws:dynamodb:us-east-1:123456789012:table/users-table",
+      "tableId": "a1b2c3d4-5678-90ab-cdef-EXAMPLE11111",
+      "creationDateTime": "2025-11-15T14:30:00Z"
+    }
+  },
+  "eventID": "evt-dynamodb-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

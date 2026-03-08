@@ -1,0 +1,33 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-01T10:00:00Z",
+  "eventSource": "wafv2.amazonaws.com",
+  "eventName": "CreateWebACL",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "name": "prod-web-acl",
+    "scope": "REGIONAL",
+    "defaultAction": {
+      "allow": {}
+    }
+  },
+  "responseElements": {
+    "summary": {
+      "name": "prod-web-acl",
+      "id": "acl-1234567890abcdef0",
+      "aRN": "arn:aws:wafv2:us-east-1:123456789012:regional/webacl/prod-web-acl/acl-1234567890abcdef0",
+      "lockToken": "a1b2c3d4-5678-90ab-cdef-EXAMPLE11111"
+    }
+  },
+  "eventID": "evt-waf-create-acl-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

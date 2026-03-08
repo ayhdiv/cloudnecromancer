@@ -1,0 +1,32 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-11T08:00:00Z",
+  "eventSource": "ecs.amazonaws.com",
+  "eventName": "CreateCluster",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "clusterName": "production-cluster"
+  },
+  "responseElements": {
+    "cluster": {
+      "clusterArn": "arn:aws:ecs:us-east-1:123456789012:cluster/production-cluster",
+      "clusterName": "production-cluster",
+      "status": "ACTIVE",
+      "registeredContainerInstancesCount": 0,
+      "runningTasksCount": 0,
+      "pendingTasksCount": 0,
+      "activeServicesCount": 0
+    }
+  },
+  "eventID": "evt-ecs-cluster-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

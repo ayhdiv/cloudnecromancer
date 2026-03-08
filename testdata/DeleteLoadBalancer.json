@@ -1,0 +1,22 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-10T10:30:00Z",
+  "eventSource": "elasticloadbalancing.amazonaws.com",
+  "eventName": "DeleteLoadBalancer",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "loadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/app/my-app-alb/50dc6c495c0c9188"
+  },
+  "responseElements": null,
+  "eventID": "evt-elb-delete-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

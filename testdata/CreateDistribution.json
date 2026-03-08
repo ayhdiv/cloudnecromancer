@@ -1,0 +1,40 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-03T08:00:00Z",
+  "eventSource": "cloudfront.amazonaws.com",
+  "eventName": "CreateDistribution",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "distributionConfig": {
+      "callerReference": "ref-2025-12-03",
+      "origins": {
+        "quantity": 1,
+        "items": [
+          {
+            "id": "S3-my-bucket",
+            "domainName": "my-bucket.s3.amazonaws.com"
+          }
+        ]
+      }
+    }
+  },
+  "responseElements": {
+    "distribution": {
+      "id": "E1A2B3C4D5E6F7",
+      "domainName": "d111111abcdef8.cloudfront.net",
+      "status": "InProgress",
+      "aRN": "arn:aws:cloudfront::123456789012:distribution/E1A2B3C4D5E6F7"
+    }
+  },
+  "eventID": "evt-cf-create-dist-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

@@ -1,0 +1,30 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T15:05:00Z",
+  "eventSource": "ecr.amazonaws.com",
+  "eventName": "CreateRepository",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.ecr.amazonaws.com",
+  "requestParameters": {
+    "repositoryName": "my-app/backend"
+  },
+  "responseElements": {
+    "repository": {
+      "repositoryName": "my-app/backend",
+      "repositoryArn": "arn:aws:ecr:us-east-1:123456789012:repository/my-app/backend",
+      "repositoryUri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/my-app/backend",
+      "registryId": "123456789012",
+      "createdAt": "2025-11-15T15:05:00Z"
+    }
+  },
+  "eventID": "evt-ecr-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

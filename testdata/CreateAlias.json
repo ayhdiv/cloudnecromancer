@@ -1,0 +1,23 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-13T14:30:00Z",
+  "eventSource": "kms.amazonaws.com",
+  "eventName": "CreateAlias",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "aliasName": "alias/my-app-key",
+    "targetKeyId": "a1b2c3d4-5678-90ab-cdef-EXAMPLE11111"
+  },
+  "responseElements": null,
+  "eventID": "evt-kms-alias-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

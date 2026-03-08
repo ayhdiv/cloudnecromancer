@@ -1,0 +1,22 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-15T14:00:00Z",
+  "eventSource": "logs.amazonaws.com",
+  "eventName": "DeleteLogGroup",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.amazonaws.com",
+  "requestParameters": {
+    "logGroupName": "/aws/lambda/my-function"
+  },
+  "responseElements": null,
+  "eventID": "evt-cw-loggroup-delete-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

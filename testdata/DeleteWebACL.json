@@ -1,0 +1,25 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-01T12:00:00Z",
+  "eventSource": "wafv2.amazonaws.com",
+  "eventName": "DeleteWebACL",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "name": "prod-web-acl",
+    "id": "acl-1234567890abcdef0",
+    "scope": "REGIONAL",
+    "lockToken": "a1b2c3d4-5678-90ab-cdef-EXAMPLE11111"
+  },
+  "responseElements": null,
+  "eventID": "evt-waf-delete-acl-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

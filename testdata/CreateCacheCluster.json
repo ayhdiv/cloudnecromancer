@@ -1,0 +1,32 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T15:10:00Z",
+  "eventSource": "elasticache.amazonaws.com",
+  "eventName": "CreateCacheCluster",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.elasticache.amazonaws.com",
+  "requestParameters": {
+    "cacheClusterId": "my-redis-cluster",
+    "engine": "redis",
+    "cacheNodeType": "cache.t3.micro",
+    "numCacheNodes": "1"
+  },
+  "responseElements": {
+    "cacheCluster": {
+      "cacheClusterId": "my-redis-cluster",
+      "cacheClusterStatus": "creating",
+      "engine": "redis",
+      "cacheNodeType": "cache.t3.micro"
+    }
+  },
+  "eventID": "evt-elasticache-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

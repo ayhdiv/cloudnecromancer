@@ -1,0 +1,24 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-11-15T14:45:00Z",
+  "eventSource": "sqs.amazonaws.com",
+  "eventName": "CreateQueue",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "console.sqs.amazonaws.com",
+  "requestParameters": {
+    "queueName": "order-processing-queue"
+  },
+  "responseElements": {
+    "queueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/order-processing-queue"
+  },
+  "eventID": "evt-sqs-create-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}

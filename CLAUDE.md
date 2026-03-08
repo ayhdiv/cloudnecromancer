@@ -13,7 +13,7 @@ make lint     # golangci-lint run
 ## Architecture
 - `cmd/` — Cobra CLI commands (fetch, resurrect, diff, export, info)
 - `internal/aws/` — AWS SDK client interface + CloudTrail fetcher
-- `internal/parser/` — Event parser interface, registry, per-service parsers
+- `internal/parser/` — Event parser interface, registry, 23 per-service parsers (133 CloudTrail events)
 - `internal/engine/` — Resurrection replay engine, snapshot model, diff logic
 - `internal/store/` — DuckDB event cache
 - `internal/export/` — Exporters (JSON, Terraform/HCL, CloudFormation, CDK, Pulumi, OCSF, CSV)

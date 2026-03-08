@@ -1,0 +1,30 @@
+{
+  "eventVersion": "1.08",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "principalId": "AROA3XFRBF23EJQD5EXAMPLE:session-name",
+    "arn": "arn:aws:sts::123456789012:assumed-role/Admin/session-name",
+    "accountId": "123456789012"
+  },
+  "eventTime": "2025-12-01T11:00:00Z",
+  "eventSource": "wafv2.amazonaws.com",
+  "eventName": "CreateRuleGroup",
+  "awsRegion": "us-east-1",
+  "sourceIPAddress": "203.0.113.50",
+  "userAgent": "aws-cli/2.13.0",
+  "requestParameters": {
+    "name": "block-bad-ips",
+    "scope": "REGIONAL",
+    "capacity": 100
+  },
+  "responseElements": {
+    "summary": {
+      "name": "block-bad-ips",
+      "id": "rg-abcdef1234567890",
+      "lockToken": "b2c3d4e5-6789-01ab-cdef-EXAMPLE22222"
+    }
+  },
+  "eventID": "evt-waf-create-rg-001",
+  "eventType": "AwsApiCall",
+  "recipientAccountId": "123456789012"
+}
