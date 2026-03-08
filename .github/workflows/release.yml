@@ -16,10 +16,7 @@ jobs:
           - runner: ubuntu-latest
             goos: linux
             goarch: amd64
-          - runner: ubuntu-24.04-arm
-            goos: linux
-            goarch: arm64
-          - runner: macos-13
+          - runner: macos-latest
             goos: darwin
             goarch: amd64
           - runner: macos-latest
@@ -84,7 +81,6 @@ jobs:
           DARWIN_AMD64_SHA=$(sha256sum dist/cloudnecromancer_${GITHUB_REF_NAME}_darwin_amd64.tar.gz | awk '{print $1}')
           DARWIN_ARM64_SHA=$(sha256sum dist/cloudnecromancer_${GITHUB_REF_NAME}_darwin_arm64.tar.gz | awk '{print $1}')
           LINUX_AMD64_SHA=$(sha256sum dist/cloudnecromancer_${GITHUB_REF_NAME}_linux_amd64.tar.gz | awk '{print $1}')
-          LINUX_ARM64_SHA=$(sha256sum dist/cloudnecromancer_${GITHUB_REF_NAME}_linux_arm64.tar.gz | awk '{print $1}')
           BASE_URL="https://github.com/pfrederiksen/cloudnecromancer/releases/download/${GITHUB_REF_NAME}"
 
           cat > formula.rb <<FORMULA
@@ -121,13 +117,6 @@ jobs:
               if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
                 url "${BASE_URL}/cloudnecromancer_${GITHUB_REF_NAME}_linux_amd64.tar.gz"
                 sha256 "${LINUX_AMD64_SHA}"
-                def install
-                  bin.install "cloudnecromancer"
-                end
-              end
-              if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-                url "${BASE_URL}/cloudnecromancer_${GITHUB_REF_NAME}_linux_arm64.tar.gz"
-                sha256 "${LINUX_ARM64_SHA}"
                 def install
                   bin.install "cloudnecromancer"
                 end
