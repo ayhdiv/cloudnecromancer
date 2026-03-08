@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -84,7 +85,7 @@ func runResurrect(cmd *cobra.Command, args []string) error {
 	// Determine output writer
 	w := os.Stdout
 	if resurrectOutput != "" {
-		f, err := os.OpenFile(resurrectOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		f, err := os.OpenFile(filepath.Clean(resurrectOutput), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return fmt.Errorf("create output file: %w", err)
 		}

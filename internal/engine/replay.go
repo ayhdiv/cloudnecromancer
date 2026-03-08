@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sort"
 	"time"
 
@@ -48,6 +49,7 @@ func ReplayFromEvents(events []store.StoredEvent, opts ReplayOptions) (*Snapshot
 
 		key := resourceKey(delta)
 		if key == "" {
+			log.Printf("warning: parser for %s returned empty resource ID (event %s), skipping", ev.EventName, ev.EventID)
 			continue
 		}
 		typeKey := delta.Service + ":" + delta.ResourceType

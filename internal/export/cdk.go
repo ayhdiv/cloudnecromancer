@@ -177,10 +177,15 @@ func cdkModuleAlias(module string) string {
 }
 
 func cdkVarName(resourceID string) string {
-	return strings.Map(func(r rune) rune {
+	name := strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' {
 			return r
 		}
 		return '_'
 	}, resourceID)
+	name = strings.Trim(name, "_")
+	if name == "" {
+		name = "resource"
+	}
+	return name
 }

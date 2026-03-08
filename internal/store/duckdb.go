@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -54,9 +55,21 @@ CREATE TABLE IF NOT EXISTS events (
 // NewStore opens (or creates) a DuckDB database at dbPath and ensures the
 // events table exists.
 func NewStore(dbPath string) (*Store, error) {
+	isNew := false
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		isNew = true
+	}
+
 	db, err := sql.Open("duckdb", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("open duckdb %s: %w", dbPath, err)
+	}
+
+	// Restrict file permissions on newly created databases. DuckDB uses the
+	// system umask (typically 0644), but the DB may contain sensitive
+	// CloudTrail data (IAM ARNs, account IDs, source IPs).
+	if isNew {
+		_ = os.Chmod(dbPath, 0600)
 	}
 	if _, err := db.Exec(createTableSQL); err != nil {
 		db.Close()

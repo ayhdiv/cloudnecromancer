@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -26,6 +27,7 @@ var rootCmd = &cobra.Command{
 	Short: "Reconstruct AWS infrastructure from CloudTrail events",
 	Long:  "CloudNecromancer resurrects point-in-time snapshots of AWS infrastructure by replaying CloudTrail event chains.",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		dbPath = filepath.Clean(dbPath)
 		if !quiet {
 			fmt.Fprint(os.Stderr, banner)
 		}

@@ -149,8 +149,12 @@ func pulumiVarName(resourceID string) string {
 		}
 		return '_'
 	}, resourceID)
+	name = strings.Trim(name, "_")
+	if name == "" {
+		name = "resource"
+	}
 	// Ensure starts with letter
-	if len(name) > 0 && name[0] >= '0' && name[0] <= '9' {
+	if name[0] >= '0' && name[0] <= '9' {
 		name = "_" + name
 	}
 	return name

@@ -11,6 +11,20 @@ import (
 	"github.com/pfrederiksen/cloudnecromancer/internal/engine"
 )
 
+// sanitizeCSVCell prevents CSV formula injection by prefixing dangerous
+// values with a tab character. Spreadsheet applications interpret cells
+// starting with =, +, -, @, \t, or \r as formulas.
+func sanitizeCSVCell(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "\t" + s
+	}
+	return s
+}
+
 // CSVExporter writes a Snapshot as a Splunk-compatible lookup CSV.
 type CSVExporter struct{}
 
@@ -38,16 +52,16 @@ func (e *CSVExporter) Export(snapshot *engine.Snapshot, w io.Writer) error {
 		for _, res := range resources {
 			attrsJSON, _ := json.Marshal(res.Attributes)
 			row := []string{
-				res.ResourceID,
-				resourceType,
-				service,
-				res.State,
-				region,
-				snapshot.AccountID,
+				sanitizeCSVCell(res.ResourceID),
+				sanitizeCSVCell(resourceType),
+				sanitizeCSVCell(service),
+				sanitizeCSVCell(res.State),
+				sanitizeCSVCell(region),
+				sanitizeCSVCell(snapshot.AccountID),
 				res.CreatedAt.Format(time.RFC3339),
 				res.LastModified.Format(time.RFC3339),
 				snapshot.Timestamp.Format(time.RFC3339),
-				string(attrsJSON),
+				sanitizeCSVCell(string(attrsJSON)),
 			}
 			if err := cw.Write(row); err != nil {
 				return fmt.Errorf("csv row: %w", err)

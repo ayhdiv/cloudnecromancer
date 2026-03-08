@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	internalaws "github.com/pfrederiksen/cloudnecromancer/internal/aws"
 	"github.com/pfrederiksen/cloudnecromancer/internal/store"
 )
+
+var accountIDPattern = regexp.MustCompile(`^\d{12}$`)
 
 var (
 	fetchAccountID string
@@ -44,6 +47,10 @@ func init() {
 }
 
 func runFetch(cmd *cobra.Command, args []string) error {
+	if !accountIDPattern.MatchString(fetchAccountID) {
+		return fmt.Errorf("invalid --account-id: must be a 12-digit number, got %q", fetchAccountID)
+	}
+
 	startTime, err := time.Parse(time.RFC3339, fetchStart)
 	if err != nil {
 		return fmt.Errorf("invalid --start: %w", err)
@@ -51,6 +58,9 @@ func runFetch(cmd *cobra.Command, args []string) error {
 	endTime, err := time.Parse(time.RFC3339, fetchEnd)
 	if err != nil {
 		return fmt.Errorf("invalid --end: %w", err)
+	}
+	if !startTime.Before(endTime) {
+		return fmt.Errorf("invalid time range: --start (%s) must be before --end (%s)", fetchStart, fetchEnd)
 	}
 
 	regions := []string{fetchRegion}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -32,7 +33,7 @@ func init() {
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
-	data, err := os.ReadFile(exportInput)
+	data, err := os.ReadFile(filepath.Clean(exportInput))
 	if err != nil {
 		return fmt.Errorf("read input: %w", err)
 	}
@@ -44,7 +45,7 @@ func runExport(cmd *cobra.Command, args []string) error {
 
 	w := os.Stdout
 	if exportOutput != "" {
-		f, err := os.OpenFile(exportOutput, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		f, err := os.OpenFile(filepath.Clean(exportOutput), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
 			return fmt.Errorf("create output: %w", err)
 		}
