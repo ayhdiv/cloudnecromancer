@@ -20,38 +20,16 @@ Given any historical timestamp, CloudNecromancer resurrects every resource that 
 
 ## Install
 
-### Homebrew (macOS / Linux)
-
 ```bash
+# Homebrew (macOS / Linux)
 brew tap pfrederiksen/tap
 brew install cloudnecromancer
-```
 
-### From release binaries
-
-Download the latest release for your platform from [Releases](https://github.com/pfrederiksen/cloudnecromancer/releases).
-
-| Platform | Architecture |
-|----------|-------------|
-| macOS | Intel (amd64), Apple Silicon (arm64) |
-| Linux | amd64 |
-
-### From source
-
-```bash
+# From source (requires CGO + DuckDB headers)
 go install github.com/pfrederiksen/cloudnecromancer@latest
 ```
 
-> **Note:** Requires CGO and DuckDB C library headers (`build-essential` on Linux).
-
-### Build locally
-
-```bash
-git clone https://github.com/pfrederiksen/cloudnecromancer.git
-cd cloudnecromancer
-make build
-# Binary at ./bin/cloudnecromancer
-```
+Pre-built binaries for macOS (Intel/Apple Silicon) and Linux (amd64) are available on the [Releases](https://github.com/pfrederiksen/cloudnecromancer/releases) page.
 
 ## Quick Start
 
@@ -70,45 +48,66 @@ cloudnecromancer resurrect --at 2026-02-15T03:00:00Z
 cloudnecromancer diff \
   --from 2026-01-01T00:00:00Z \
   --to 2026-02-15T03:00:00Z
+
+# 4. Export as Terraform HCL
+cloudnecromancer resurrect --at 2026-02-15T03:00:00Z --format terraform --output snapshot.tf
 ```
 
-## Commands
+## Data Sources
 
-### `fetch` — Pull CloudTrail events into local DB
+### CloudTrail API (default)
+
+Queries the `LookupEvents` API directly. Simple to set up, but limited to the last 90 days.
 
 ```bash
 cloudnecromancer fetch \
+  --source cloudtrail \
   --account-id 123456789012 \
-  --region us-east-1 \
+  --regions us-east-1,us-west-2 \
   --start 2026-01-01T00:00:00Z \
   --end 2026-03-01T00:00:00Z \
-  [--regions us-east-1,us-west-2,eu-west-1] \
-  [--profile my-aws-profile] \
-  [--db ./necromancer.db]
+  [--profile my-aws-profile]
 ```
 
-Fetches CloudTrail management events across one or more regions concurrently and stores them in a local DuckDB database. Events are deduplicated by event ID, so re-running fetch for overlapping time ranges is safe.
+Requires read-only CloudTrail permissions. See [AWS_PERMISSIONS.md](AWS_PERMISSIONS.md) for the minimal IAM policy.
 
-**Example output:**
+### Splunk
 
-```
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- ░  ☠  CloudNecromancer  ☠  ░
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- Raising the dead since 2026
+Queries CloudTrail events from a Splunk index. No time limit — go as far back as your retention allows.
 
-Fetching CloudTrail events...
- us-east-1  ████████████████████████████████ 100% | 12,847 events
- us-west-2  ████████████████████████████████ 100% |  3,291 events
-
-Summary:
-  Events fetched:  16,138
-  Services:        ec2, iam, s3, lambda, rds
-  Date range:      2026-01-01 to 2026-03-01
-  Database:        ./necromancer.db (24 MB)
+```bash
+cloudnecromancer fetch \
+  --source splunk \
+  --splunk-url https://splunk.corp:8089 \
+  --splunk-token $SPLUNK_TOKEN \
+  --account-id 123456789012 \
+  --regions us-east-1,us-west-2 \
+  --start 2024-01-01T00:00:00Z \
+  --end 2026-03-01T00:00:00Z
 ```
 
-### `resurrect` — Reconstruct infrastructure at a point in time
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--splunk-url` | *(or `SPLUNK_URL` env)* | Splunk REST API base URL (e.g. `https://splunk.corp:8089`) |
+| `--splunk-token` | *(or `SPLUNK_TOKEN` env)* | Splunk bearer token |
+| `--splunk-index` | `aws_cloudtrail` | Splunk index containing CloudTrail events |
+| `--splunk-sourcetype` | `aws:cloudtrail` | Splunk sourcetype |
+| `--splunk-query` | *(auto-generated)* | Override the generated SPL query entirely |
+| `--splunk-insecure` | `false` | Skip TLS certificate verification |
+
+The auto-generated SPL query searches the configured index/sourcetype and filters by account ID and regions. Use `--splunk-query` to provide your own SPL if your CloudTrail data uses a non-standard schema.
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `fetch` | Pull CloudTrail events from CloudTrail API or Splunk into local DuckDB |
+| `resurrect` | Reconstruct infrastructure state at a point in time |
+| `diff` | Compare infrastructure between two timestamps |
+| `export` | Re-export an existing snapshot in a different format |
+| `info` | Show database statistics |
+
+### `resurrect`
 
 ```bash
 cloudnecromancer resurrect \
@@ -118,19 +117,48 @@ cloudnecromancer resurrect \
   [--format json|terraform|cloudformation|cdk|pulumi|ocsf|csv] \
   [--output ./snapshot.json] \
   [--include-dead] \
-  [--ritual] \
-  [--db ./necromancer.db]
+  [--ritual]
 ```
 
-Replays all events up to the given timestamp and reconstructs the state of every resource. The `--ritual` flag adds an animated ASCII skull with a "RAISING THE DEAD..." typewriter effect.
+### `diff`
 
-**Example JSON output** (`--format json`):
+```bash
+cloudnecromancer diff \
+  --from 2026-01-01T00:00:00Z \
+  --to 2026-02-15T03:00:00Z \
+  [--format table|json]
+```
+
+### `export`
+
+```bash
+cloudnecromancer export \
+  --input ./snapshot.json \
+  --format hcl \
+  --output ./snapshot.tf
+```
+
+## Output Formats
+
+| Format | Flag | Description |
+|--------|------|-------------|
+| JSON | `--format json` | Full snapshot with nested resource attributes |
+| Terraform | `--format terraform` | HCL with `import` + `resource` blocks (aliases: `hcl`, `tf`) |
+| CloudFormation | `--format cloudformation` | CloudFormation JSON template (alias: `cfn`) |
+| CDK | `--format cdk` | AWS CDK TypeScript stack using L1 constructs |
+| Pulumi | `--format pulumi` | Pulumi TypeScript program using `@pulumi/aws` |
+| OCSF | `--format ocsf` | OCSF Inventory Info events (class_uid 5001), NDJSON |
+| CSV | `--format csv` | Splunk lookup table format |
+
+<details>
+<summary>Output format examples</summary>
+
+**JSON** (`--format json`):
 
 ```json
 {
   "timestamp": "2026-02-15T03:00:00Z",
   "account_id": "123456789012",
-  "regions": ["us-east-1", "us-west-2"],
   "resources": {
     "ec2:instance": [
       {
@@ -138,64 +166,17 @@ Replays all events up to the given timestamp and reconstructs the state of every
         "state": "running",
         "attributes": {
           "instance_type": "t3.medium",
-          "image_id": "ami-0abcdef1234567890",
-          "vpc_id": "vpc-0123456789abcdef0",
-          "subnet_id": "subnet-0123456789abcdef0"
-        },
-        "created_at": "2026-01-10T14:22:00Z",
-        "last_modified": "2026-02-01T09:15:00Z"
-      }
-    ],
-    "iam:role": [
-      {
-        "resource_id": "WebAppRole",
-        "state": "active",
-        "attributes": {
-          "attached_policies": [
-            "arn:aws:iam::123456789012:policy/S3ReadOnly",
-            "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-          ]
-        },
-        "created_at": "2026-01-05T10:00:00Z",
-        "last_modified": "2026-01-20T16:30:00Z"
-      }
-    ],
-    "s3:bucket": [
-      {
-        "resource_id": "prod-data-lake-2026",
-        "state": "active",
-        "attributes": {
-          "versioning": "Enabled",
-          "public_access_block": true
-        },
-        "created_at": "2026-01-02T08:00:00Z",
-        "last_modified": "2026-01-15T12:00:00Z"
+          "image_id": "ami-0abcdef1234567890"
+        }
       }
     ]
-  },
-  "summary": {
-    "total_resources": 47,
-    "by_service": {
-      "ec2": 23,
-      "iam": 12,
-      "s3": 5,
-      "lambda": 4,
-      "rds": 3
-    },
-    "by_state": {
-      "active": 42,
-      "running": 5
-    }
   }
 }
 ```
 
-**Example HCL output** (`--format hcl`):
+**Terraform HCL** (`--format terraform`):
 
 ```hcl
-# RECONSTRUCTED — verify before applying
-# Generated by CloudNecromancer at 2026-02-15T03:00:00Z
-
 import {
   to = aws_instance.i_0abc123def456789
   id = "i-0abc123def456789"
@@ -206,170 +187,36 @@ resource "aws_instance" "i_0abc123def456789" {
   ami           = "ami-0abcdef1234567890"
   subnet_id     = "subnet-0123456789abcdef0"
 }
-
-import {
-  to = aws_iam_role.WebAppRole
-  id = "WebAppRole"
-}
-
-resource "aws_iam_role" "WebAppRole" {
-}
-
-import {
-  to = aws_s3_bucket.prod_data_lake_2026
-  id = "prod-data-lake-2026"
-}
-
-resource "aws_s3_bucket" "prod_data_lake_2026" {
-}
 ```
 
-**Example CloudFormation output** (`--format cloudformation`):
-
-```json
-{
-  "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Reconstructed by CloudNecromancer at 2026-02-15T03:00:00Z -- verify before deploying",
-  "Resources": {
-    "Ec2Instancei0abc123def456789": {
-      "Type": "AWS::EC2::Instance",
-      "Properties": {
-        "InstanceType": "t3.medium",
-        "ImageId": "ami-0abcdef1234567890",
-        "SubnetId": "subnet-0123456789abcdef0"
-      }
-    },
-    "S3Bucketproddatalake2026": {
-      "Type": "AWS::S3::Bucket",
-      "Properties": {
-        "BucketName": "prod-data-lake-2026"
-      }
-    }
-  }
-}
-```
-
-**Example CDK output** (`--format cdk`):
+**CDK** (`--format cdk`):
 
 ```typescript
-// RECONSTRUCTED -- verify before deploying
-// Generated by CloudNecromancer at 2026-02-15T03:00:00Z
-
-import * as cdk from 'aws-cdk-lib';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import { Construct } from 'constructs';
-
-export class CloudNecromancerStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
-
-    new ec2.CfnInstance(this, "i-0abc123def456789", {
-      instanceType: "t3.medium",
-      imageId: "ami-0abcdef1234567890",
-      subnetId: "subnet-0123456789abcdef0",
-    });
-
-    new s3.CfnBucket(this, "prod-data-lake-2026", {
-      bucketName: "prod-data-lake-2026",
-    });
-  }
-}
+new ec2.CfnInstance(this, "i-0abc123def456789", {
+  instanceType: "t3.medium",
+  imageId: "ami-0abcdef1234567890",
+  subnetId: "subnet-0123456789abcdef0",
+});
 ```
 
-**Example Pulumi output** (`--format pulumi`):
+**Pulumi** (`--format pulumi`):
 
 ```typescript
-// RECONSTRUCTED -- verify before deploying
-// Generated by CloudNecromancer at 2026-02-15T03:00:00Z
-
-import * as aws from "@pulumi/aws";
-
 const i_0abc123def456789 = new aws.ec2.Instance("i-0abc123def456789", {
     instanceType: "t3.medium",
     ami: "ami-0abcdef1234567890",
     subnetId: "subnet-0123456789abcdef0",
 });
-
-const prod_data_lake_2026 = new aws.s3.Bucket("prod-data-lake-2026", {
-    bucket: "prod-data-lake-2026",
-});
 ```
 
-**Example CSV output** (`--format csv`):
+**CSV** (`--format csv`) — for use as a Splunk lookup table:
 
-```
-resource_id,resource_type,service,state,region,account_id,created_at,last_modified,snapshot_timestamp,attributes_json
-i-0abc123def456789,instance,ec2,running,us-east-1,123456789012,2026-01-10T14:22:00Z,2026-02-01T09:15:00Z,2026-02-15T03:00:00Z,"{""instance_type"":""t3.medium""}"
-WebAppRole,role,iam,active,us-east-1,123456789012,2026-01-05T10:00:00Z,2026-01-20T16:30:00Z,2026-02-15T03:00:00Z,"{""attached_policies"":[""arn:aws:iam::123456789012:policy/S3ReadOnly""]}"
-```
-
-### `diff` — Compare infrastructure between two timestamps
-
-```bash
-cloudnecromancer diff \
-  --from 2026-01-01T00:00:00Z \
-  --to 2026-02-15T03:00:00Z \
-  [--format table|json] \
-  [--db ./necromancer.db]
+```spl
+| inputlookup cloudnecromancer_lookup.csv
+| join resource_id [search index=cloudtrail earliest=-30d]
 ```
 
-Generates snapshots at both timestamps and reports what changed.
-
-**Example output** (default table format):
-
-```
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- ░  ☠  CloudNecromancer  ☠  ░
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- Raising the dead since 2026
-
-Diff: 2026-01-01T00:00:00Z → 2026-02-15T03:00:00Z
-
-+ ADDED (12 resources)
-  + ec2:instance     i-0abc123def456789    t3.medium    us-east-1
-  + ec2:instance     i-0def456789abc123    t3.large     us-west-2
-  + s3:bucket        prod-data-lake-2026                us-east-1
-  + lambda:function  process-orders        python3.12   us-east-1
-  ...
-
-- REMOVED (3 resources)
-  - ec2:instance     i-0old999888777666    t2.micro     us-east-1
-  - iam:role         LegacyAdminRole                    us-east-1
-  - s3:bucket        temp-migration-2025                us-east-1
-
-~ MODIFIED (8 resources)
-  ~ iam:role         WebAppRole            us-east-1
-      attached_policies: +arn:aws:iam::123456789012:policy/S3ReadOnly
-  ~ ec2:security_group  sg-0123456789abcdef0    us-east-1
-      ingress: +0.0.0.0/0:443
-```
-
-### `export` — Re-export an existing snapshot
-
-```bash
-cloudnecromancer export \
-  --input ./snapshot.json \
-  --format hcl \
-  --output ./snapshot.tf
-```
-
-### `info` — Show database stats
-
-```bash
-cloudnecromancer info [--db ./necromancer.db]
-```
-
-**Example output:**
-
-```
-Database: ./necromancer.db
-  Events:     16,138
-  Date range: 2026-01-01T00:00:00Z to 2026-03-01T00:00:00Z
-  Services:   ec2, iam, s3, lambda, rds
-  Regions:    us-east-1, us-west-2
-  Size:       24 MB
-```
+</details>
 
 ## Global Flags
 
@@ -380,87 +227,43 @@ Database: ./necromancer.db
 | `--quiet` | `false` | Suppress banner and non-essential output |
 | `--verbose` | `false` | Enable verbose logging |
 
-## AWS Permissions
-
-CloudNecromancer requires read-only access to CloudTrail. See [AWS_PERMISSIONS.md](AWS_PERMISSIONS.md) for the minimal IAM policy.
-
-Quick version:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "cloudtrail:LookupEvents",
-        "cloudtrail:GetTrailStatus",
-        "cloudtrail:DescribeTrails"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-Credentials are resolved via the standard AWS SDK credential chain: environment variables, `~/.aws/credentials`, IAM instance role, etc.
-
-## Output Formats
-
-| Format | Flag | Description |
-|--------|------|-------------|
-| JSON | `--format json` | Full snapshot with nested resource attributes |
-| Terraform | `--format terraform` | Terraform-importable HCL with `import` + `resource` blocks (aliases: `hcl`, `tf`) |
-| CloudFormation | `--format cloudformation` | AWS CloudFormation JSON template (alias: `cfn`) |
-| CDK | `--format cdk` | AWS CDK TypeScript stack using L1 constructs |
-| Pulumi | `--format pulumi` | Pulumi TypeScript program using `@pulumi/aws` |
-| OCSF | `--format ocsf` | OCSF Inventory Info events (class_uid 5001), newline-delimited JSON |
-| CSV | `--format csv` | Splunk lookup table format |
-
-### Using CSV with Splunk
-
-Upload the CSV output as a Splunk lookup table, then correlate with CloudTrail logs:
-
-```spl
-| inputlookup cloudnecromancer_lookup.csv
-| join resource_id [search index=cloudtrail earliest=-30d]
-```
-
 ## Supported Services (23)
 
-| Service | Resources | Create | Update | Delete |
-|---------|-----------|--------|--------|--------|
-| EC2 | instances, VPCs, subnets, security groups, IGWs | Yes | Yes | Yes |
-| IAM | roles, users, policies | Yes | Yes | Yes |
-| S3 | buckets, policies, versioning, public access | Yes | Yes | Yes |
-| Lambda | functions | Yes | Yes | Yes |
-| RDS | instances, clusters | Yes | Yes | Yes |
-| ELB | load balancers, target groups, listeners | Yes | Yes | Yes |
-| ECS | clusters, services, task definitions | Yes | Yes | Yes |
-| EKS | clusters, nodegroups | Yes | Yes | Yes |
-| KMS | keys, aliases, rotation | Yes | Yes | Yes |
-| Secrets Manager | secrets, rotation, restore | Yes | Yes | Yes |
-| CloudWatch Logs | log groups, log streams, retention | Yes | Yes | Yes |
-| DynamoDB | tables, global tables | Yes | Yes | Yes |
-| SNS | topics, subscriptions | Yes | Yes | Yes |
-| SQS | queues, queue attributes | Yes | Yes | Yes |
-| API Gateway | REST APIs, HTTP APIs, stages | Yes | Yes | Yes |
-| Route 53 | hosted zones, record sets | Yes | Yes | Yes |
-| ECR | repositories, lifecycle policies, scanning | Yes | Yes | Yes |
-| ElastiCache | clusters, replication groups | Yes | Yes | Yes |
-| WAF v2 | web ACLs, rule groups, IP sets | Yes | Yes | Yes |
-| GuardDuty | detectors, filters | Yes | Yes | Yes |
-| CloudFront | distributions, origin access controls | Yes | Yes | Yes |
-| EBS | volumes, snapshots | Yes | Yes | Yes |
-| SSM | documents, parameters, maintenance windows | Yes | Yes | Yes |
+| Service | Resources |
+|---------|-----------|
+| EC2 | instances, VPCs, subnets, security groups, IGWs |
+| IAM | roles, users, policies |
+| S3 | buckets, policies, versioning, public access |
+| Lambda | functions |
+| RDS | instances, clusters |
+| ELB | load balancers, target groups, listeners |
+| ECS | clusters, services, task definitions |
+| EKS | clusters, nodegroups |
+| KMS | keys, aliases, rotation |
+| Secrets Manager | secrets, rotation, restore |
+| CloudWatch Logs | log groups, log streams, retention |
+| DynamoDB | tables, global tables |
+| SNS | topics, subscriptions |
+| SQS | queues, queue attributes |
+| API Gateway | REST APIs, HTTP APIs, stages |
+| Route 53 | hosted zones, record sets |
+| ECR | repositories, lifecycle policies, scanning |
+| ElastiCache | clusters, replication groups |
+| WAF v2 | web ACLs, rule groups, IP sets |
+| GuardDuty | detectors, filters |
+| CloudFront | distributions, origin access controls |
+| EBS | volumes, snapshots |
+| SSM | documents, parameters, maintenance windows |
+
+All services support create, update, and delete event tracking (133 CloudTrail events total).
 
 ## How It Works
 
-1. **Fetch** — CloudNecromancer pulls CloudTrail management events via `LookupEvents` and stores them in an embedded DuckDB database. Multi-region fetches run concurrently.
+1. **Fetch** — Pull CloudTrail events from the CloudTrail API or Splunk and store them in an embedded DuckDB database. Multi-region fetches run concurrently.
 
-2. **Parse** — Each CloudTrail event is routed through a service-specific parser (registered at startup) that extracts a `ResourceDelta`: the action (create/update/delete), resource ID, and relevant attributes.
+2. **Parse** — Each event is routed through a service-specific parser that extracts a `ResourceDelta`: the action (create/update/delete), resource ID, and relevant attributes.
 
-3. **Replay** — To reconstruct state at time T, the engine queries all events before T (ordered chronologically) and applies each delta to an in-memory resource map. Creates insert, updates merge attributes, deletes mark resources as terminated.
+3. **Replay** — To reconstruct state at time T, the engine queries all events before T (ordered chronologically) and applies each delta to an in-memory resource map.
 
 4. **Export** — The final snapshot is serialized in the requested format.
 
@@ -470,7 +273,6 @@ Upload the CSV output as a Splunk lookup table, then correlate with CloudTrail l
 make build    # Build binary to ./bin/cloudnecromancer
 make test     # Run all tests
 make lint     # Run golangci-lint
-make snapshot # Build cross-platform binaries (GoReleaser)
 ```
 
 ### Adding a new service parser
@@ -487,7 +289,6 @@ make snapshot # Build cross-platform binaries (GoReleaser)
 2. Implement the `Exporter` interface (`Export(snapshot, writer) error`)
 3. Register it in `GetExporter()` in `internal/export/exporter.go`
 4. Add tests in `internal/export/export_test.go`
-5. Update `--format` flag descriptions in `cmd/resurrect.go` and `cmd/export.go`
 
 ## License
 

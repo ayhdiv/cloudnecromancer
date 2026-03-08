@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	internalaws "github.com/pfrederiksen/cloudnecromancer/internal/aws"
+	"github.com/pfrederiksen/cloudnecromancer/internal/splunk"
 	"github.com/pfrederiksen/cloudnecromancer/internal/store"
 )
 
@@ -24,12 +26,31 @@ var (
 	fetchRegions   string
 	fetchStart     string
 	fetchEnd       string
+
+	// Source selection
+	fetchSource string
+
+	// Splunk options
+	splunkURL        string
+	splunkToken      string
+	splunkIndex      string
+	splunkSourcetype string
+	splunkQuery      string
+	splunkInsecure   bool
 )
 
 var fetchCmd = &cobra.Command{
 	Use:   "fetch",
 	Short: "Fetch CloudTrail events and store them in DuckDB",
-	RunE:  runFetch,
+	Long: `Fetch CloudTrail events from AWS CloudTrail API or Splunk.
+
+Sources:
+  cloudtrail  Query the CloudTrail LookupEvents API directly (default, 90-day limit)
+  splunk      Query a Splunk instance containing indexed CloudTrail events (no time limit)
+
+Splunk authentication uses a bearer token, which can be passed via --splunk-token
+or the SPLUNK_TOKEN environment variable.`,
+	RunE: runFetch,
 }
 
 func init() {
@@ -39,7 +60,17 @@ func init() {
 	fetchCmd.Flags().StringVar(&fetchStart, "start", "", "Start time in RFC3339 format (required)")
 	fetchCmd.Flags().StringVar(&fetchEnd, "end", "", "End time in RFC3339 format (required)")
 
-	_ = fetchCmd.MarkFlagRequired("account-id")
+	// Source selection
+	fetchCmd.Flags().StringVar(&fetchSource, "source", "cloudtrail", "Event source: cloudtrail, splunk")
+
+	// Splunk options
+	fetchCmd.Flags().StringVar(&splunkURL, "splunk-url", "", "Splunk REST API base URL (e.g. https://splunk.corp:8089)")
+	fetchCmd.Flags().StringVar(&splunkToken, "splunk-token", "", "Splunk bearer token (or set SPLUNK_TOKEN env var)")
+	fetchCmd.Flags().StringVar(&splunkIndex, "splunk-index", "aws_cloudtrail", "Splunk index containing CloudTrail events")
+	fetchCmd.Flags().StringVar(&splunkSourcetype, "splunk-sourcetype", "aws:cloudtrail", "Splunk sourcetype for CloudTrail events")
+	fetchCmd.Flags().StringVar(&splunkQuery, "splunk-query", "", "Override the generated SPL query entirely")
+	fetchCmd.Flags().BoolVar(&splunkInsecure, "splunk-insecure", false, "Skip TLS certificate verification for Splunk")
+
 	_ = fetchCmd.MarkFlagRequired("start")
 	_ = fetchCmd.MarkFlagRequired("end")
 
@@ -47,10 +78,6 @@ func init() {
 }
 
 func runFetch(cmd *cobra.Command, args []string) error {
-	if !accountIDPattern.MatchString(fetchAccountID) {
-		return fmt.Errorf("invalid --account-id: must be a 12-digit number, got %q", fetchAccountID)
-	}
-
 	startTime, err := time.Parse(time.RFC3339, fetchStart)
 	if err != nil {
 		return fmt.Errorf("invalid --start: %w", err)
@@ -71,29 +98,31 @@ func runFetch(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	ctx := context.Background()
+	var events []internalaws.RawEvent
 
-	// Load AWS config
-	cfgOpts := []func(*config.LoadOptions) error{}
-	if profile != "" {
-		cfgOpts = append(cfgOpts, config.WithSharedConfigProfile(profile))
-	}
+	switch strings.ToLower(fetchSource) {
+	case "cloudtrail":
+		if fetchAccountID == "" {
+			return fmt.Errorf("--account-id is required when using --source cloudtrail")
+		}
+		if !accountIDPattern.MatchString(fetchAccountID) {
+			return fmt.Errorf("invalid --account-id: must be a 12-digit number, got %q", fetchAccountID)
+		}
+		var fetchErr error
+		events, fetchErr = fetchFromCloudTrail(startTime, endTime, regions)
+		if fetchErr != nil {
+			return fetchErr
+		}
 
-	cfg, err := config.LoadDefaultConfig(ctx, cfgOpts...)
-	if err != nil {
-		return fmt.Errorf("load AWS config: %w", err)
-	}
+	case "splunk":
+		var fetchErr error
+		events, fetchErr = fetchFromSplunk(startTime, endTime, regions)
+		if fetchErr != nil {
+			return fetchErr
+		}
 
-	client := cloudtrail.NewFromConfig(cfg)
-
-	// Fetch events
-	fetcher := internalaws.NewFetcher(client, !quiet)
-	fmt.Fprintf(os.Stderr, "Fetching events from %d region(s): %s\n", len(regions), strings.Join(regions, ", "))
-	fmt.Fprintf(os.Stderr, "Time range: %s to %s\n", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
-
-	events, err := fetcher.FetchEvents(ctx, startTime, endTime, regions)
-	if err != nil {
-		return fmt.Errorf("fetch events: %w", err)
+	default:
+		return fmt.Errorf("unknown --source %q: must be 'cloudtrail' or 'splunk'", fetchSource)
 	}
 
 	// Store events
@@ -103,12 +132,17 @@ func runFetch(cmd *cobra.Command, args []string) error {
 	}
 	defer db.Close()
 
-	inserted, err := db.InsertEvents(events, fetchAccountID)
+	accountID := fetchAccountID
+	if accountID == "" {
+		accountID = "unknown" // Splunk mode may not require explicit account ID
+	}
+
+	inserted, err := db.InsertEvents(events, accountID)
 	if err != nil {
 		return fmt.Errorf("insert events: %w", err)
 	}
 
-	// Gather services for summary
+	// Summary
 	serviceSet := make(map[string]struct{})
 	for _, ev := range events {
 		serviceSet[ev.EventSource] = struct{}{}
@@ -130,4 +164,98 @@ func runFetch(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func fetchFromCloudTrail(startTime, endTime time.Time, regions []string) ([]internalaws.RawEvent, error) {
+	ctx := context.Background()
+
+	cfgOpts := []func(*config.LoadOptions) error{}
+	if profile != "" {
+		cfgOpts = append(cfgOpts, config.WithSharedConfigProfile(profile))
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx, cfgOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("load AWS config: %w", err)
+	}
+
+	client := cloudtrail.NewFromConfig(cfg)
+	fetcher := internalaws.NewFetcher(client, !quiet)
+
+	fmt.Fprintf(os.Stderr, "Source: CloudTrail API\n")
+	fmt.Fprintf(os.Stderr, "Fetching events from %d region(s): %s\n", len(regions), strings.Join(regions, ", "))
+	fmt.Fprintf(os.Stderr, "Time range: %s to %s\n", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
+
+	events, err := fetcher.FetchEvents(ctx, startTime, endTime, regions)
+	if err != nil {
+		return nil, fmt.Errorf("fetch events: %w", err)
+	}
+	return events, nil
+}
+
+func fetchFromSplunk(startTime, endTime time.Time, regions []string) ([]internalaws.RawEvent, error) {
+	// Resolve Splunk token: flag > env var
+	// Prefer SPLUNK_TOKEN env var over --splunk-token flag to avoid
+	// exposing the token in process listings (ps aux).
+	token := splunkToken
+	if token == "" {
+		token = os.Getenv("SPLUNK_TOKEN")
+	}
+	if token == "" {
+		return nil, fmt.Errorf("Splunk token required: set SPLUNK_TOKEN environment variable (preferred) or --splunk-token flag")
+	}
+
+	// Resolve Splunk URL: flag > env var
+	splunkEndpoint := splunkURL
+	if splunkEndpoint == "" {
+		splunkEndpoint = os.Getenv("SPLUNK_URL")
+	}
+	if splunkEndpoint == "" {
+		return nil, fmt.Errorf("Splunk URL required: set --splunk-url or SPLUNK_URL environment variable")
+	}
+
+	// Validate URL scheme — require HTTPS unless --splunk-insecure is set
+	parsed, err := url.Parse(splunkEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid --splunk-url: %w", err)
+	}
+	if parsed.Scheme == "http" && !splunkInsecure {
+		return nil, fmt.Errorf("refusing to send credentials over HTTP; use https:// or add --splunk-insecure to override")
+	}
+
+	// Validate account ID if provided in Splunk mode
+	if fetchAccountID != "" && !accountIDPattern.MatchString(fetchAccountID) {
+		return nil, fmt.Errorf("invalid --account-id: must be a 12-digit number, got %q", fetchAccountID)
+	}
+
+	var clientOpts []splunk.ClientOption
+	if splunkInsecure {
+		clientOpts = append(clientOpts, splunk.WithInsecureSkipVerify())
+	}
+
+	client := splunk.NewClient(splunkEndpoint, token, clientOpts...)
+	fetcher, err := splunk.NewFetcher(client, splunk.FetchConfig{
+		Index:          splunkIndex,
+		Sourcetype:     splunkSourcetype,
+		AccountID:      fetchAccountID,
+		Regions:        regions,
+		SearchOverride: splunkQuery,
+		ShowProgress:   !quiet,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Redact userinfo from URL before logging
+	safeURL := *parsed
+	safeURL.User = nil
+	fmt.Fprintf(os.Stderr, "Source: Splunk (%s)\n", safeURL.String())
+	fmt.Fprintf(os.Stderr, "Index: %s, Sourcetype: %s\n", splunkIndex, splunkSourcetype)
+	fmt.Fprintf(os.Stderr, "Time range: %s to %s\n", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
+
+	events, err := fetcher.FetchEvents(startTime, endTime)
+	if err != nil {
+		return nil, fmt.Errorf("fetch events: %w", err)
+	}
+	return events, nil
 }
